@@ -25,9 +25,7 @@ var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
 var rest = require('restler');
-var http = require('http');
 var HTMLFILE_DEFAULT = "index.html";
-var URLFILE_DEFAULT = "url.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 
 var assertFileExists = function(infile) {
@@ -64,38 +62,15 @@ var clone = function(fn) {
     return fn.bind({});
 };
 
-// Write separate function to write out json checks output
-var jsonOut = function(outJson) {
-  var outJson = JSON.stringify(checkJson, null, 4);
-  console.log(outJson);
-}
-
 if(require.main == module) {
     program
-        .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .option('-u, --url <url>', 'URL to your Heroku app')
+        .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
+        .option('-u, --url <url>', 'URL to your Heroku app', clone(assertFileExists), HTMLFILE_DEFAULT)
         .parse(process.argv);
-    var checkJson = null;
-    
-    if(program.url) {
-      console.log("Using url option!");
-      var file = fs.createWriteStream(URLFILE_DEFAULT);
-      var request = http.get(program.url, function(response) {
-          response.pipe(file);
-          file.on('finish', function() {
-          file.close();
-          checkJson = checkHtmlFile(URLFILE_DEFAULT,program.checks);
-          jsonOut(checkJson);
-        });
-      });
-    }
-    else {
-      console.log("Using file option!");
-      checkJson = checkHtmlFile(program.file, program.checks);
-      jsonOut(checkJson);
-    }
-
+    var checkJson = checkHtmlFile(program.file, program.checks);
+    var outJson = JSON.stringify(checkJson, null, 4);
+    console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
